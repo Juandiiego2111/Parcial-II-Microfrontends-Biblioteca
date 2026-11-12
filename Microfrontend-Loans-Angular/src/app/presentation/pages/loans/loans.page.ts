@@ -6,6 +6,8 @@ import { ListLoansUseCase } from '../../../application/usecases/list-loans.useca
 import { Loan, NewLoan } from '../../../domain/entities/loan.entity';
 import { LoanRepository } from '../../../domain/repositories/loan.repository';
 import { LoanApiGateway } from '../../../infrastructure/gateways/loan-api.gateway';
+import { InMemoryLoanRepository } from '../../../infrastructure/repositories/in-memory-loan.repository';
+import { environment } from '../../../../environments/environment';
 import { AlertComponent } from '../../components/alert/alert.component';
 import { LoanDetailComponent } from '../../components/loan-detail/loan-detail.component';
 import { LoanFormComponent } from '../../components/loan-form/loan-form.component';
@@ -21,16 +23,19 @@ import { State } from '../../interfaces/state.interface';
  * Es el componente que se expone por Module Federation (`./LoansPage`).
  * Solo usa casos de uso: nunca habla directo con `HttpClient`.
  *
- * El enlace `LoanRepository → LoanApiGateway` se declara en sus `providers`
- * porque, cuando el host carga este microfrontend, el `app.config.ts` del MF
- * no se ejecuta.
+ * El enlace `LoanRepository → LoanApiGateway` (o `InMemoryLoanRepository` en modo demo)
+ * se declara en sus `providers` porque, cuando el host carga este microfrontend, el
+ * `app.config.ts` del MF no se ejecuta.
  */
 @Component({
   selector: 'app-loans',
   templateUrl: './loans.page.html',
   imports: [ContainerAtom, AlertComponent, LoansTableComponent, LoanDetailComponent, LoanFormComponent],
   providers: [
-    { provide: LoanRepository, useClass: LoanApiGateway },
+    {
+      provide: LoanRepository,
+      useFactory: () => (environment.demoMode ? new InMemoryLoanRepository() : new LoanApiGateway),
+    },
     ListLoansUseCase,
     GetLoanByIdUseCase,
     CreateLoanUseCase,

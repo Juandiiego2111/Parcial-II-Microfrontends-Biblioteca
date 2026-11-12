@@ -67,6 +67,30 @@
 							"optimization": false,
 							"extractLicenses": false,
 							"sourceMap": true
+						},
+						"ghpages": {
+							"budgets": [
+								{
+									"type": "initial",
+									"maximumWarning": "500kB",
+									"maximumError": "1MB"
+								},
+								{
+									"type": "anyComponentStyle",
+									"maximumWarning": "4kB",
+									"maximumError": "8kB"
+								}
+							],
+							"outputHashing": "all",
+							"baseHref": "/Parcial-II-Microfrontends-Biblioteca/remotes/loans/",
+							"deployUrl": "/Parcial-II-Microfrontends-Biblioteca/remotes/loans/",
+							"fileReplacements": [
+								{
+									"replace": "src/environments/environment.ts",
+									"with": "src/environments/environment.ghpages.ts"
+								}
+							],
+							"extraWebpackConfig": "webpack.ghpages.config.js"
 						}
 					},
 					"defaultConfiguration": "production"
