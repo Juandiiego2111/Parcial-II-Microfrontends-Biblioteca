@@ -155,3 +155,81 @@ Conventional Commits en español, con alcance: `tipo(alcance): descripción`.
 - **Alcances:** `host`, `mf-books`, `mf-members`, `mf-loans`, `ms-books`, `ms-members`, `ms-loans`, `repo`, `docs`.
 
 Ejemplo: `feat(ms-books): agrega caso de uso listar libros`.
+
+## Despliegue en GitHub Pages
+
+### URL del sitio
+
+- **Producción:** <https://juandiiego2111.github.io/Parcial-II-Microfrontends-Biblioteca/>
+
+### Estructura del sitio publicada
+
+```
+/
+├── index.html                          -> Host (Client-Host-Angular)
+├── main*.js / styles*.css ...          -> Chunks del Host
+└── remotes/
+    ├── books/
+    │   ├── remoteEntry.js              -> Microfrontend de Libros (BooksPage)
+    │   └── *.js                        -> Chunks del MF de Libros
+    ├── members/
+    │   ├── remoteEntry.js              -> Microfrontend de Socios (MembersPage)
+    │   └── *.js                        -> Chunks del MF de Socios
+    └── loans/
+        ├── remoteEntry.js              -> Microfrontend de Préstamos (LoansPage)
+        └── *.js                        -> Chunks del MF de Préstamos
+```
+
+### Modo demostración (datos de ejemplo)
+
+El sitio publicado en GitHub Pages **no consume los microservicios** (que solo corren localmente con `ng serve`/backends reales). GitHub Pages solo sirve contenido **estático**, por lo que:
+
+- Cada microfrontend expone un **repositorio en memoria** con datos de ejemplo realistas en español (con CRUD funcional en memoria durante la sesión).
+- Los datos de préstamos son coherentes con los libros y socios de ejemplo.
+- El Host muestra el aviso discreto: **"Modo demostración: datos de ejemplo"**.
+
+Este comportamiento se activa **únicamente** con la configuración de build `ghpages` (`ng build --configuration ghpages`), que selecciona los environments mediante `fileReplacements` (`src/environments/environment.ts` → `src/environments/environment.ghpages.ts`).
+
+### Pipeline de despliegue
+
+El workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) se dispara con `push` a `main` y con `workflow_dispatch` y ejecuta:
+
+1. **build:** instala dependencias (`npm ci`), ejecuta las pruebas de las 4 apps, build `ghpages` de las 4 apps, ensambla el sitio (`scripts/assemble-ghpages.mjs`) y sube el artefacto a Pages.
+2. **deploy:** publica el artefacto con `actions/deploy-pages`.
+3. **verify:** con reintentos de `curl`, comprueba que la URL publicada responde `200`, que el `index.html` del host contiene el texto del host y que los tres `/remotes/*/remoteEntry.js` responden `200`.
+
+### Ejecutar localmente el build de GitHub Pages y el ensamblado
+
+```bash
+# Desde la raíz del repositorio
+
+# 1. Build ghpages de cada app (requiere Node 22)
+cd Client-Host-Angular && npm run build:ghpages
+cd ../Microfrontend-Books-Angular && npm run build:ghpages
+cd ../Microfrontend-Members-Angular && npm run build:ghpages
+cd ../Microfrontend-Loans-Angular && npm run build:ghpages
+
+# 2. Ensamblar la carpeta site/
+node scripts/assemble-ghpages.mjs
+
+# 3. Servir el sitio localmente (por ejemplo con cualquier servidor estático)
+npx serve site
+# o: python -m http.server 8080 --directory site
+```
+
+Para validar localmente que el sitio responde bajo el prefijo `/Parcial-II-Microfrontends-Biblioteca/`, levantar un servidor estático que monte `site/` en ese prefijo y comprobar:
+
+- `GET /Parcial-II-Microfrontends-Biblioteca/` → `200` (Host).
+- `GET /Parcial-II-Microfrontends-Biblioteca/remotes/books/remoteEntry.js` → `200`.
+- `GET /Parcial-II-Microfrontends-Biblioteca/remotes/members/remoteEntry.js` → `200`.
+- `GET /Parcial-II-Microfrontends-Biblioteca/remotes/loans/remoteEntry.js` → `200`.
+
+### Aviso
+
+GitHub Pages solo sirve contenido estático, por eso los backends (microservicios) no se despliegan ni se tocan en el pipeline.
+
+### Créditos
+
+- Proyecto original: **David Mora Duque (INGDavidMora2005)**, **Juan Diego Rodríguez** y **Juan Pablo Devia**.
+- Despliegue en GitHub Pages por **Juan Diego Rodríguez Ortiz (Juandiiego2111)**.
+
