@@ -1,9 +1,18 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { provideRouter, withHashLocation, RouterFeatures } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
-import { provideBrowserGlobalErrorListeners } from '@angular/core';
 
 import { routes } from './app.routes';
+import { environment } from '../environments/environment';
+
+/**
+ * Features del enrutador condicionadas por el entorno.
+ *
+ * @remarks
+ * Solo en `ghpages` (build de GitHub Pages) se activa el `HashLocationStrategy`,
+ * necesario porque el sitio se sirve bajo un subpath donde no conviene usar History API.
+ */
+const routerFeatures: RouterFeatures[] = environment.demoMode ? [withHashLocation()] : [];
 
 /**
  * Configuración global de la aplicación (Host).
@@ -14,7 +23,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
-    provideHttpClient()
+    provideRouter(routes, ...routerFeatures),
+    provideHttpClient(),
   ]
 };

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavbarOrganism } from '@brejcha13320/design-system-bootstrap';
+import { environment } from '../environments/environment';
 
 /**
  * Componente raíz de la aplicación Host.
@@ -28,4 +29,7 @@ export class App {
       { text: 'Préstamos', url: '/loans' }
     ]
   };
+
+  /** Indica si la aplicación se está ejecutando en modo demostración (GitHub Pages). */
+  protected readonly isDemoMode = environment.demoMode;
 }

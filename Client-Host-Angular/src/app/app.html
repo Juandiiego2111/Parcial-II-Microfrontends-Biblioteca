@@ -1,3 +1,6 @@
+@if (isDemoMode) {
+  <div class="demo-banner" data-testid="demo-banner">Modo demostración: datos de ejemplo</div>
+}
 <div class="mx-5"><dsb-navbar-organism [navbarConfig]="navbarConfig"></dsb-navbar-organism></div>
 <div class="divider-spacing"></div>
 <section><router-outlet /></section>
