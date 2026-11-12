@@ -1,0 +1,13 @@
+# Sitio ensamblado para GitHub Pages
+/site/
+
+# Build output
+/dist/
+/tmp/
+/out-tsc/
+
+# Node
+/node_modules/
+
+# Tests
+/coverage/
