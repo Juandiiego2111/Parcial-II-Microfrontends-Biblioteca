@@ -1,0 +1,140 @@
+name: Deploy a GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            Client-Host-Angular/package-lock.json
+            Microfrontend-Books-Angular/package-lock.json
+            Microfrontend-Members-Angular/package-lock.json
+            Microfrontend-Loans-Angular/package-lock.json
+
+      - name: Install dependencies (Host)
+        working-directory: Client-Host-Angular
+        run: npm ci
+
+      - name: Install dependencies (Books)
+        working-directory: Microfrontend-Books-Angular
+        run: npm ci
+
+      - name: Install dependencies (Members)
+        working-directory: Microfrontend-Members-Angular
+        run: npm ci
+
+      - name: Install dependencies (Loans)
+        working-directory: Microfrontend-Loans-Angular
+        run: npm ci
+
+      - name: Run tests (Host)
+        working-directory: Client-Host-Angular
+        run: npm test
+
+      - name: Run tests (Books)
+        working-directory: Microfrontend-Books-Angular
+        run: npm test
+
+      - name: Run tests (Members)
+        working-directory: Microfrontend-Members-Angular
+        run: npm test
+
+      - name: Run tests (Loans)
+        working-directory: Microfrontend-Loans-Angular
+        run: npm test
+
+      - name: Build GHPages (Host)
+        working-directory: Client-Host-Angular
+        run: npm run build:ghpages
+
+      - name: Build GHPages (Books)
+        working-directory: Microfrontend-Books-Angular
+        run: npm run build:ghpages
+
+      - name: Build GHPages (Members)
+        working-directory: Microfrontend-Members-Angular
+        run: npm run build:ghpages
+
+      - name: Build GHPages (Loans)
+        working-directory: Microfrontend-Loans-Angular
+        run: npm run build:ghpages
+
+      - name: Assemble site
+        run: node scripts/assemble-ghpages.mjs
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  verify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify GitHub Pages deployment
+        run: |
+          SITE_URL="https://juandiiego2111.github.io/Parcial-II-Microfrontends-Biblioteca/"
+          MAX_ATTEMPTS=5
+          ATTEMPT=1
+          STATUS=000
+          while [ "$ATTEMPT" -le "$MAX_ATTEMPTS" ]; do
+            STATUS=$(curl --silent --show-error --output /tmp/ghpages-index.html --write-out "%{http_code}" "$SITE_URL")
+            if [ "$STATUS" = "200" ]; then
+              break
+            fi
+            echo "Intento $ATTEMPT falló con código $STATUS. Reintentando en 20 segundos..."
+            ATTEMPT=$((ATTEMPT + 1))
+            sleep 20
+          done
+          if [ "$STATUS" != "200" ]; then
+            echo "La URL del sitio no respondió 200 tras $MAX_ATTEMPTS intentos."
+            exit 1
+          fi
+          if ! grep -q "Biblioteca - Host" /tmp/ghpages-index.html; then
+            echo "El index del host no contiene el texto esperado."
+            exit 1
+          fi
+          for REMOTE in books members loans; do
+            REMOTE_STATUS=$(curl --silent --show-error --output /dev/null --write-out "%{http_code}" "${SITE_URL}remotes/$REMOTE/remoteEntry.js")
+            if [ "$REMOTE_STATUS" != "200" ]; then
+              echo "El remote /remotes/$REMOTE/remoteEntry.js respondió $REMOTE_STATUS"
+              exit 1
+            fi
+          done
+          echo "Verificación del despliegue en GitHub Pages superada."
