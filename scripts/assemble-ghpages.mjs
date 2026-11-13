@@ -18,21 +18,21 @@ const siteDir = join(rootDir, 'site');
 
 const HOST_DIST_DIR = join(rootDir, 'Client-Host-Angular', 'dist', 'Client-Host-Angular');
 
-const MICROFRONTENDS_DIST: Record<string, string> = {
+const MICROFRONTENDS_DIST = {
   books: join(rootDir, 'Microfrontend-Books-Angular', 'dist', 'Microfrontend-Books-Angular'),
   members: join(rootDir, 'Microfrontend-Members-Angular', 'dist', 'Microfrontend-Members-Angular'),
   loans: join(rootDir, 'Microfrontend-Loans-Angular', 'dist', 'Microfrontend-Loans-Angular'),
 };
 
-function removeDir(path: string): void {
+function removeDir(path) {
   rmSync(path, { recursive: true, force: true });
 }
 
-function ensureDir(path: string): void {
+function ensureDir(path) {
   mkdirSync(path, { recursive: true });
 }
 
-function main(): void {
+function main() {
   removeDir(siteDir);
   ensureDir(siteDir);
 
@@ -46,7 +46,7 @@ function main(): void {
     cpSync(distPath, targetDir, { recursive: true });
   }
 
-  // 3. Validaciones básicas del ensamblado.
+  // 3. Validaciones básicas del ensamblaje.
   const hostIndex = join(siteDir, 'index.html');
   if (!existsSync(hostIndex)) {
     throw new Error(`No se encontró el index del host en ${hostIndex}`);
